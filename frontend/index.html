@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Monitoramento SNMP</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><span class="icon">📊</span> Dashboard de Monitoramento SNMP</h1>
+            <p>Visualização dos dados coletados do seu dispositivo de rede.</p>
+        </header>
+
+        <main>
+            <div class="snmp-card">
+                <div class="card-header">
+                    <h2>Dados SNMP Recebidos</h2>
+                    <div class="status-indicator"></div>
+                </div>
+                <div class="card-body">
+                    <div id="snmp-data-container">
+                        <p class="loading">Carregando dados...</p>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <span>Atualizado em: <span id="update-time">--:--:--</span></span>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                 <div class="card-header">
+                    <h2>Consumo da Interface (Mbps)</h2>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="realtimeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
