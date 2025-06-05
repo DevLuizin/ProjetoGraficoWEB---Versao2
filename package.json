@@ -1,15 +1,20 @@
 {
   "name": "projetograficoweb-2",
   "version": "1.0.0",
+  "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon backend/server.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
   "dependencies": {
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "net-snmp": "^3.22.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
   }
 }
