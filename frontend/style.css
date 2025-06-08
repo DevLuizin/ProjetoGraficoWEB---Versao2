@@ -1,3 +1,4 @@
+/* style.css */
 /* General Body Styles */
 body {
     font-family: 'Roboto', sans-serif;
@@ -90,7 +91,6 @@ header p {
     }
 }
 
-
 /* Card Body */
 .card-body {
     padding: 25px;
@@ -114,7 +114,7 @@ header p {
     margin-bottom: 10px;
     border-left: 4px solid #3498db;
     font-size: 0.95rem;
-    white-space: pre-wrap; /* Ensures line breaks are respected */
+    white-space: pre-wrap;
     word-break: break-all;
     transition: background-color 0.3s ease;
 }
@@ -133,7 +133,7 @@ header p {
     text-align: right;
 }
 
-/* Card para o Gráfico */
+/* Chart Card */
 .chart-card {
     background-color: #1e1e1e;
     border-radius: 12px;
@@ -141,12 +141,12 @@ header p {
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     overflow: hidden;
     text-align: left;
-    margin-top: 30px; /* Espaço entre os dois cards */
+    margin-top: 30px;
 }
 
-/* Container do Canvas para responsividade */
+/* Chart Container */
 .chart-container {
     position: relative;
-    height: 350px; /* Altura do gráfico */
+    height: 350px;
     width: 100%;
 }

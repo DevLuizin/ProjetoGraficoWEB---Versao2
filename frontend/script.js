@@ -1,46 +1,45 @@
+// script.js
 document.addEventListener('DOMContentLoaded', function() {
-    // --- Elementos para o card de dados ---
     const dataContainer = document.getElementById('snmp-data-container');
     const updateTimeSpan = document.getElementById('update-time');
     const statusIndicator = document.querySelector('.status-indicator');
 
-    // --- Elementos para o gráfico ---
     const ctx = document.getElementById('realtimeChart').getContext('2d');
-    const FETCH_INTERVAL_MS = 1000; // 5 segundos
-    const MAX_DATA_POINTS = 10; // Mostrar 30 pontos no gráfico (2.5 minutos de histórico)
+    const FETCH_INTERVAL_MS = 5000;  // 5 segundos
+    const MAX_DATA_POINTS = 30;
 
-    // --- Configuração inicial do Gráfico com TEMA ESCURO ---
     const chart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: [],
-            datasets: [{
-                label: 'Rx (Mbps)',
-                data: [],
-                borderColor: '#3498db',
-                backgroundColor: 'rgba(52, 152, 219, 0.2)',
-                borderWidth: 2,
-                fill: true,
-                tension: 0.4,
-                pointRadius: 0,
-                pointHoverRadius: 6,
-                pointHitRadius: 10,
-                pointHoverBackgroundColor: '#3498db',
-            },
-            {
-                label: 'Tx (Mbps)',
-                data: [],
-                borderColor: '#643255',
-                backgroundColor: 'rgba(219, 52, 52, 0.2)',
-                borderWidth: 2,
-                fill: true,
-                tension: 0.4,
-                pointRadius: 0,
-                pointHoverRadius: 6,
-                pointHitRadius: 10,
-                pointHoverBackgroundColor: '#643255',
-            },
-        ]
+            datasets: [
+                {
+                    label: 'Rx (Mbps)',
+                    data: [],
+                    borderColor: '#3498db',
+                    backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 0,
+                    pointHoverRadius: 6,
+                    pointHitRadius: 10,
+                    pointHoverBackgroundColor: '#3498db',
+                },
+                {
+                    label: 'Tx (Mbps)',
+                    data: [],
+                    borderColor: '#e74c3c',
+                    backgroundColor: 'rgba(231, 76, 60, 0.2)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 0,
+                    pointHoverRadius: 6,
+                    pointHitRadius: 10,
+                    pointHoverBackgroundColor: '#e74c3c',
+                },
+            ]
         },
         options: {
             responsive: true,
@@ -65,66 +64,61 @@ document.addEventListener('DOMContentLoaded', function() {
                     titleColor: '#fff',
                     bodyColor: '#fff',
                     callbacks: {
-                        label: (context) => `${context.dataset.label}: ${context.parsed.y.toFixed(2)} Mbps`
+                        label: context => `${context.dataset.label}: ${context.parsed.y.toFixed(2)} Mbps`
                     }
                 }
             }
         }
     });
 
-    // --- Função ÚNICA para buscar dados e atualizar TUDO (Card e Gráfico) ---
     async function fetchDataAndUpdateUI() {
         try {
-            const response = await fetch('/api/taxa');
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => null);
-                throw new Error(errorData?.error || `HTTP error! Status: ${response.status}`);
-            }
-            
-            const data = await response.json();
+            const res = await fetch('/trafego');
+            const data = await res.json();
 
-            // 1. ATUALIZAR O CARD DE DADOS (Lógica anterior)
+            // Atualiza card
             dataContainer.innerHTML = '';
-            const list = document.createElement('ul');
-            const dataToShow = {
-                "Taxa Rx (Mbps)": data.mbpsRx,
-                "Taxa Rx (Bps)": data.bpsRx,
-                "Total de Bytes Rx (Raw)": data.rawBytesRx,
-                "Taxa Tx (Mbps)": data.mbpsTx,
-                "Taxa Tx (Bps)": data.bpsTx,
-                "Total de Bytes Tx (Raw)": data.rawBytesTx
-            };
-            for (const key in dataToShow) {
-                const listItem = document.createElement('li');
-                listItem.textContent = `${key}: ${dataToShow[key]}`;
-                list.appendChild(listItem);
+            const ul = document.createElement('ul');
+            if (data.message) {
+                const li = document.createElement('li');
+                li.textContent = data.message;
+                ul.appendChild(li);
+            } else {
+                const itens = [
+                    `Rx (Mbps): ${data.rxKbps}`,
+                    `Tx (Mbps): ${data.txKbps}`
+                ];
+                itens.forEach(txt => {
+                    const li = document.createElement('li');
+                    li.textContent = txt;
+                    ul.appendChild(li);
+                });
+                statusIndicator.classList.add('success');
+                updateTimeSpan.textContent = data.lastTime;
+            }
+            dataContainer.appendChild(ul);
+
+            // Atualiza gráfico
+            if (!data.message) {
+                const now = new Date();
+                const label = now.toLocaleTimeString();
+                chart.data.labels.push(label);
+                chart.data.datasets[0].data.push(parseFloat(data.rxKbps));
+                chart.data.datasets[1].data.push(parseFloat(data.txKbps));
+                if (chart.data.labels.length > MAX_DATA_POINTS) {
+                    chart.data.labels.shift();
+                    chart.data.datasets.forEach(ds => ds.data.shift());
+                }
+                chart.update('quiet');
             }
 
-            dataContainer.appendChild(list);
-            statusIndicator.classList.add('success');
-            updateTimeSpan.textContent = new Date().toLocaleTimeString();
-
-            // 2. ATUALIZAR O GRÁFICO (Lógica do projeto original, adaptada)
-            const now = new Date();
-            const newLabel = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
-            
-            chart.data.labels.push(newLabel);
-            chart.data.datasets[0].data.push(parseFloat(data.mbpsRx));
-            chart.data.datasets[1].data.push(parseFloat(data.mbpsTx))
-            /* if (chart.data.labels.length > MAX_DATA_POINTS) {
-                chart.data.labels.shift();
-                chart.data.datasets[0].data.shift();
-            } */
-            chart.update('quiet'); // 'quiet' faz uma animação mais sutil
-
-        } catch (error) {
-            console.error('Falha ao buscar dados da API:', error);
-            dataContainer.innerHTML = `<p class="error">Falha ao carregar dados: ${error.message}</p>`;
+        } catch (err) {
+            console.error(err);
+            dataContainer.innerHTML = `<p class="error">Erro ao carregar dados: ${err.message}</p>`;
             statusIndicator.classList.remove('success');
         }
     }
 
-    // Busca os dados iniciais e configura a atualização periódica
     fetchDataAndUpdateUI();
     setInterval(fetchDataAndUpdateUI, FETCH_INTERVAL_MS);
 });
