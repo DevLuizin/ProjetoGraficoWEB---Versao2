@@ -6,11 +6,11 @@ const path    = require("path");
 const app     = express();
 
 // Criar sessão SNMP
-const session = snmp.createSession("192.168.1.2", "public");
+const session = snmp.createSession("192.168.1.12", "public");
 
 // OIDs de Rx e Tx
-const rxOID = "1.3.6.1.2.1.31.1.1.1.6.1";
-const txOID = "1.3.6.1.2.1.31.1.1.1.10.1";
+const rxOID = "1.3.6.1.2.1.31.1.1.1.6.2";
+const txOID = "1.3.6.1.2.1.31.1.1.1.10.2";
 
 // Armazenar valores anteriores
 let lastRx   = null;
