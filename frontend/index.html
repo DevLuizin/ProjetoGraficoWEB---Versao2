@@ -1,4 +1,3 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -34,7 +33,14 @@
 
             <div class="chart-card">
                  <div class="card-header">
-                    <h2>Consumo da Interface (Mbps)</h2>
+                    <h2>Consumo da Interface</h2>
+                    <div class="unit-selector">
+                        <label for="unit-toggle">Unidade:</label>
+                        <select id="unit-toggle">
+                            <option value="Mbps" selected>Mbps</option>
+                            <option value="Kbps">Kbps</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="card-body">
                     <div class="chart-container">

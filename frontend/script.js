@@ -3,10 +3,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const dataContainer = document.getElementById('snmp-data-container');
     const updateTimeSpan = document.getElementById('update-time');
     const statusIndicator = document.querySelector('.status-indicator');
+    const unitToggle = document.getElementById('unit-toggle');
 
     const ctx = document.getElementById('realtimeChart').getContext('2d');
-    const FETCH_INTERVAL_MS = 5000;  // 5 segundos
+    const FETCH_INTERVAL_MS = 5000; // 5 segundos
     const MAX_DATA_POINTS = 30;
+    let currentUnit = 'Mbps';
 
     const chart = new Chart(ctx, {
         type: 'line',
@@ -14,7 +16,7 @@ document.addEventListener('DOMContentLoaded', function() {
             labels: [],
             datasets: [
                 {
-                    label: 'Rx (Mbps)',
+                    label: `Rx (${currentUnit})`,
                     data: [],
                     borderColor: '#3498db',
                     backgroundColor: 'rgba(52, 152, 219, 0.2)',
@@ -27,7 +29,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     pointHoverBackgroundColor: '#3498db',
                 },
                 {
-                    label: 'Tx (Mbps)',
+                    label: `Tx (${currentUnit})`,
                     data: [],
                     borderColor: '#e74c3c',
                     backgroundColor: 'rgba(231, 76, 60, 0.2)',
@@ -47,7 +49,7 @@ document.addEventListener('DOMContentLoaded', function() {
             scales: {
                 y: {
                     beginAtZero: true,
-                    title: { display: true, text: 'Taxa (Mbps)', color: '#a0a0a0' },
+                    title: { display: true, text: `Taxa (${currentUnit})`, color: '#a0a0a0' },
                     ticks: { color: '#a0a0a0' },
                     grid: { color: 'rgba(255, 255, 255, 0.1)' }
                 },
@@ -64,12 +66,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     titleColor: '#fff',
                     bodyColor: '#fff',
                     callbacks: {
-                        label: context => `${context.dataset.label}: ${context.parsed.y.toFixed(2)} Mbps`
+                        label: context => `${context.dataset.label}: ${context.parsed.y.toFixed(2)} ${currentUnit}`
                     }
                 }
             }
         }
     });
+
+    function convertData(value, toUnit) {
+        if (toUnit === 'Kbps') {
+            return (value * 1000).toFixed(2);
+        }
+        return value; // O valor base já está em Mbps
+    }
 
     async function fetchDataAndUpdateUI() {
         try {
@@ -84,9 +93,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 li.textContent = data.message;
                 ul.appendChild(li);
             } else {
+                const rxValue = convertData(parseFloat(data.rxKbps), currentUnit);
+                const txValue = convertData(parseFloat(data.txKbps), currentUnit);
+
                 const itens = [
-                    `Rx (Mbps): ${data.rxKbps}`,
-                    `Tx (Mbps): ${data.txKbps}`
+                    `Rx (${currentUnit}): ${rxValue}`,
+                    `Tx (${currentUnit}): ${txValue}`
                 ];
                 itens.forEach(txt => {
                     const li = document.createElement('li');
@@ -102,9 +114,13 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!data.message) {
                 const now = new Date();
                 const label = now.toLocaleTimeString();
+                const rxValue = convertData(parseFloat(data.rxKbps), currentUnit);
+                const txValue = convertData(parseFloat(data.txKbps), currentUnit);
+
                 chart.data.labels.push(label);
-                chart.data.datasets[0].data.push(parseFloat(data.rxKbps));
-                chart.data.datasets[1].data.push(parseFloat(data.txKbps));
+                chart.data.datasets[0].data.push(parseFloat(rxValue));
+                chart.data.datasets[1].data.push(parseFloat(txValue));
+
                 if (chart.data.labels.length > MAX_DATA_POINTS) {
                     chart.data.labels.shift();
                     chart.data.datasets.forEach(ds => ds.data.shift());
@@ -118,6 +134,20 @@ document.addEventListener('DOMContentLoaded', function() {
             statusIndicator.classList.remove('success');
         }
     }
+
+    unitToggle.addEventListener('change', (event) => {
+        currentUnit = event.target.value;
+        chart.options.scales.y.title.text = `Taxa (${currentUnit})`;
+        chart.data.datasets[0].label = `Rx (${currentUnit})`;
+        chart.data.datasets[1].label = `Tx (${currentUnit})`;
+        
+        // Limpa os dados para evitar inconsistências
+        chart.data.labels = [];
+        chart.data.datasets.forEach(ds => ds.data = []);
+        chart.update();
+        
+        fetchDataAndUpdateUI(); // Atualiza a UI com a nova unidade
+    });
 
     fetchDataAndUpdateUI();
     setInterval(fetchDataAndUpdateUI, FETCH_INTERVAL_MS);
