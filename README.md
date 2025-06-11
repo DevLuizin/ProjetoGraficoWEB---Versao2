@@ -2,7 +2,7 @@
 
 Este é um projeto de dashboard web para monitoramento em tempo real do tráfego de rede (recepção e transmissão) de um dispositivo compatível com SNMP, como um roteador MikroTik. A aplicação consiste em um backend Node.js que coleta os dados e um frontend que os exibe em um gráfico interativo.
 
-![Exemplo do Dashboard](https://drive.google.com/file/d/1npmub0O7Fqmb7xWLdI1JOF46TZskvuDN/view?usp=sharing) ## ✨ Funcionalidades
+## ✨ Funcionalidades
 
 * **Visualização em Tempo Real**: O gráfico é atualizado automaticamente a cada 5 segundos com os novos dados de tráfego.
 * **Dados de Recepção (Rx) e Transmissão (Tx)**: Monitora ambos os fluxos de dados da interface de rede.
@@ -47,7 +47,7 @@ const txOID = "1.3.6.1.2.1.31.1.1.1.10.2"; // OID para tráfego enviado (Tx)
 
 1.  **Clone o repositório (ou baixe os arquivos):**
     ```bash
-    git clone [https://github.com/DevLuizin/ProjetoGraficoWEB-SNMP.git](hhttps://github.com/DevLuizin/ProjetoGraficoWEB-SNMP.git)
+    git clone [https://github.com/DevLuizin/ProjetoGraficoWEB-SNMP.git](https://github.com/DevLuizin/ProjetoGraficoWEB-SNMP.git)
     cd seu-repositorio
     ```
 
