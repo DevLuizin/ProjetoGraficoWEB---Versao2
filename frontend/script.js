@@ -1,51 +1,49 @@
-// script.js
 document.addEventListener('DOMContentLoaded', function() {
+    // --- ELEMENTOS DO DOM ---
     const dataContainer = document.getElementById('snmp-data-container');
     const updateTimeSpan = document.getElementById('update-time');
     const statusIndicator = document.querySelector('.status-indicator');
     const unitToggle = document.getElementById('unit-toggle');
-
+    const historySlider = document.getElementById('history-slider');
+    const historyTimestamp = document.getElementById('history-timestamp');
     const ctx = document.getElementById('realtimeChart').getContext('2d');
-    const FETCH_INTERVAL_MS = 5000; // 5 segundos
-    const MAX_DATA_POINTS = 30;
-    let currentUnit = 'Mbps';
 
+    // --- CONFIGURAÇÕES ---
+    const FETCH_INTERVAL_MS = 5000; // 5 segundos
+    const MAX_DATA_POINTS_CHART = 30; // Máximo de pontos visíveis no gráfico
+
+    // --- ESTADO DA APLICAÇÃO ---
+    let currentUnit = 'Mbps';
+    let allData = []; // Array para armazenar todo o histórico de dados
+    let isLive = true; // Flag para controlar se a visualização é ao vivo ou histórica
+
+    // --- GRÁFICO (Chart.js) ---
     const chart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: [],
-            datasets: [
-                {
-                    label: `Rx (${currentUnit})`,
-                    data: [],
-                    borderColor: '#3498db',
-                    backgroundColor: 'rgba(52, 152, 219, 0.2)',
-                    borderWidth: 2,
-                    fill: true,
-                    tension: 0.4,
-                    pointRadius: 0,
-                    pointHoverRadius: 6,
-                    pointHitRadius: 10,
-                    pointHoverBackgroundColor: '#3498db',
-                },
-                {
-                    label: `Tx (${currentUnit})`,
-                    data: [],
-                    borderColor: '#e74c3c',
-                    backgroundColor: 'rgba(231, 76, 60, 0.2)',
-                    borderWidth: 2,
-                    fill: true,
-                    tension: 0.4,
-                    pointRadius: 0,
-                    pointHoverRadius: 6,
-                    pointHitRadius: 10,
-                    pointHoverBackgroundColor: '#e74c3c',
-                },
-            ]
+            datasets: [{
+                label: `Rx (${currentUnit})`,
+                data: [],
+                borderColor: '#3498db',
+                backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4,
+            }, {
+                label: `Tx (${currentUnit})`,
+                data: [],
+                borderColor: '#e74c3c',
+                backgroundColor: 'rgba(231, 76, 60, 0.2)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4,
+            }, ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            animation: { duration: 400 },
             scales: {
                 y: {
                     beginAtZero: true,
@@ -54,17 +52,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     grid: { color: 'rgba(255, 255, 255, 0.1)' }
                 },
                 x: {
-                    title: { display: true, text: 'Tempo', color: '#a0a0a0' },
                     ticks: { color: '#a0a0a0', maxRotation: 0, autoSkip: true, maxTicksLimit: 7 },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    grid: { display: false }
                 }
             },
             plugins: {
                 legend: { labels: { color: '#e0e0e0' } },
                 tooltip: {
-                    backgroundColor: '#000',
-                    titleColor: '#fff',
-                    bodyColor: '#fff',
+                    mode: 'index',
+                    intersect: false,
                     callbacks: {
                         label: context => `${context.dataset.label}: ${context.parsed.y.toFixed(2)} ${currentUnit}`
                     }
@@ -73,82 +69,153 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    function convertData(value, toUnit) {
+    // --- FUNÇÕES ---
+
+    /**
+     * Converte o valor de Bps (bits por segundo) para a unidade desejada.
+     * @param {number} bps - O valor em bits por segundo.
+     * @param {string} toUnit - A unidade de destino ('Mbps' ou 'Kbps').
+     * @returns {number} O valor convertido.
+     */
+    function convertFromBps(bps, toUnit) {
         if (toUnit === 'Kbps') {
-            return (value * 1000).toFixed(2);
+            return bps / 1000;
         }
-        return value; // O valor base já está em Mbps
+        if (toUnit === 'Mbps') {
+            return bps / 1000000;
+        }
+        return bps;
     }
 
+    /**
+     * Atualiza o gráfico com um conjunto de dados.
+     * @param {Array} dataPoints - O array de pontos de dados a serem exibidos.
+     */
+    function updateChart(dataPoints) {
+        chart.data.labels = dataPoints.map(d => d.label);
+        
+        const rxValues = dataPoints.map(d => convertFromBps(d.rxBps, currentUnit));
+        const txValues = dataPoints.map(d => convertFromBps(d.txBps, currentUnit));
+
+        chart.data.datasets[0].data = rxValues;
+        chart.data.datasets[1].data = txValues;
+        
+        chart.update('quiet');
+    }
+
+    /**
+     * Busca os dados do servidor e atualiza a UI.
+     */
     async function fetchDataAndUpdateUI() {
         try {
             const res = await fetch('/trafego');
-            const data = await res.json();
+            statusIndicator.classList.remove('success'); // Assume falha até confirmar
 
-            // Atualiza card
-            dataContainer.innerHTML = '';
-            const ul = document.createElement('ul');
-            if (data.message) {
-                const li = document.createElement('li');
-                li.textContent = data.message;
-                ul.appendChild(li);
-            } else {
-                const rxValue = convertData(parseFloat(data.rxKbps), currentUnit);
-                const txValue = convertData(parseFloat(data.txKbps), currentUnit);
-
-                const itens = [
-                    `Rx (${currentUnit}): ${rxValue}`,
-                    `Tx (${currentUnit}): ${txValue}`
-                ];
-                itens.forEach(txt => {
-                    const li = document.createElement('li');
-                    li.textContent = txt;
-                    ul.appendChild(li);
-                });
-                statusIndicator.classList.add('success');
-                updateTimeSpan.textContent = data.lastTime;
+            if (!res.ok) {
+                 const errorData = await res.json().catch(() => ({ message: res.statusText }));
+                 throw new Error(errorData.message || `HTTP error! status: ${res.status}`);
             }
-            dataContainer.appendChild(ul);
+            
+            const data = await res.json();
+            statusIndicator.classList.add('success');
 
-            // Atualiza gráfico
-            if (!data.message) {
-                const now = new Date();
-                const label = now.toLocaleTimeString();
-                const rxValue = convertData(parseFloat(data.rxKbps), currentUnit);
-                const txValue = convertData(parseFloat(data.txKbps), currentUnit);
+            // Se o servidor está aquecendo ou enviando uma mensagem, apenas exiba-a.
+            if (data.message) {
+                dataContainer.innerHTML = `<ul><li>${data.message}</li></ul>`;
+                return;
+            }
 
-                chart.data.labels.push(label);
-                chart.data.datasets[0].data.push(parseFloat(rxValue));
-                chart.data.datasets[1].data.push(parseFloat(txValue));
+            // --- Processa e armazena os novos dados ---
+            const newDataPoint = {
+                label: data.lastTime,
+                rxBps: parseFloat(data.rxBps),
+                txBps: parseFloat(data.txBps)
+            };
+            allData.push(newDataPoint);
 
-                if (chart.data.labels.length > MAX_DATA_POINTS) {
-                    chart.data.labels.shift();
-                    chart.data.datasets.forEach(ds => ds.data.shift());
-                }
-                chart.update('quiet');
+            // --- Atualiza o card de dados ao vivo ---
+            const rxConverted = convertFromBps(newDataPoint.rxBps, currentUnit).toFixed(2);
+            const txConverted = convertFromBps(newDataPoint.txBps, currentUnit).toFixed(2);
+            dataContainer.innerHTML = `
+                <ul>
+                    <li>Rx (${currentUnit}): ${rxConverted}</li>
+                    <li>Tx (${currentUnit}): ${txConverted}</li>
+                </ul>`;
+            updateTimeSpan.textContent = newDataPoint.label;
+
+            // --- Atualiza o slider de histórico ---
+            if (historySlider.disabled) historySlider.disabled = false;
+            historySlider.max = allData.length - 1;
+
+            // --- Atualiza o gráfico se estiver em modo "ao vivo" ---
+            if (isLive) {
+                historySlider.value = historySlider.max; // Mantém o slider no final
+                const liveView = allData.slice(-MAX_DATA_POINTS_CHART);
+                updateChart(liveView);
+                historyTimestamp.textContent = 'Exibindo dados ao vivo';
             }
 
         } catch (err) {
-            console.error(err);
+            console.error("Fetch error:", err);
             dataContainer.innerHTML = `<p class="error">Erro ao carregar dados: ${err.message}</p>`;
             statusIndicator.classList.remove('success');
         }
     }
+    
+    /**
+     * Renderiza a visualização do gráfico com base na posição do slider.
+     */
+    function renderChartView() {
+        const sliderValue = parseInt(historySlider.value, 10);
+        const maxSliderValue = parseInt(historySlider.max, 10);
+        isLive = (sliderValue === maxSliderValue && allData.length > 0);
 
+        let view;
+        if (isLive) {
+            view = allData.slice(-MAX_DATA_POINTS_CHART);
+            historyTimestamp.textContent = 'Exibindo dados ao vivo';
+        } else {
+            const end = sliderValue + 1;
+            const start = Math.max(0, end - MAX_DATA_POINTS_CHART);
+            view = allData.slice(start, end);
+            const lastPointInView = view[view.length - 1];
+            if (lastPointInView) {
+                historyTimestamp.textContent = `Histórico até ${lastPointInView.label}`;
+            }
+        }
+        updateChart(view);
+    }
+
+
+    // --- EVENT LISTENERS ---
+
+    // Listener para o seletor de unidades (Kbps/Mbps)
     unitToggle.addEventListener('change', (event) => {
         currentUnit = event.target.value;
         chart.options.scales.y.title.text = `Taxa (${currentUnit})`;
         chart.data.datasets[0].label = `Rx (${currentUnit})`;
         chart.data.datasets[1].label = `Tx (${currentUnit})`;
         
-        // Limpa os dados para evitar inconsistências
-        chart.data.labels = [];
-        chart.data.datasets.forEach(ds => ds.data = []);
-        chart.update();
-        
-        fetchDataAndUpdateUI(); // Atualiza a UI com a nova unidade
+        // Re-renderiza a visualização atual com a nova unidade
+        renderChartView();
+
+        // Atualiza também o card de dados ao vivo
+        if (allData.length > 0) {
+            const lastPoint = allData[allData.length - 1];
+            const rxConverted = convertFromBps(lastPoint.rxBps, currentUnit).toFixed(2);
+            const txConverted = convertFromBps(lastPoint.txBps, currentUnit).toFixed(2);
+             dataContainer.innerHTML = `
+                <ul>
+                    <li>Rx (${currentUnit}): ${rxConverted}</li>
+                    <li>Tx (${currentUnit}): ${txConverted}</li>
+                </ul>`;
+        }
     });
 
-    fetchDataAndUpdateUI();
-    setInterval(fetchDataAndUpdateUI, FETCH_INTERVAL_MS);
+    // Listener para o slider de histórico
+    historySlider.addEventListener('input', renderChartView);
+
+    // --- INICIALIZAÇÃO ---
+    fetchDataAndUpdateUI(); // Primeira chamada
+    setInterval(fetchDataAndUpdateUI, FETCH_INTERVAL_MS); // Chamadas recorrentes
 });

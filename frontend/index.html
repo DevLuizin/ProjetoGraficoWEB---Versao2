@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard de Monitoramento SNMP</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📊</text></svg>">
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
@@ -18,7 +19,7 @@
         <main>
             <div class="snmp-card">
                 <div class="card-header">
-                    <h2>Dados SNMP Recebidos</h2>
+                    <h2>Dados SNMP Recebidos (Ao Vivo)</h2>
                     <div class="status-indicator"></div>
                 </div>
                 <div class="card-body">
@@ -48,6 +49,17 @@
                     </div>
                 </div>
             </div>
+
+            <div class="history-card">
+                <div class="card-header">
+                   <h2>Histórico</h2>
+                   <span id="history-timestamp">Aguardando dados...</span>
+               </div>
+               <div class="card-body">
+                    <input type="range" id="history-slider" min="0" max="0" value="0" disabled>
+                    <p>Arraste para navegar no tempo. Mova para o final para ver dados ao vivo.</p>
+               </div>
+           </div>
         </main>
     </div>
 
