@@ -1,15 +1,13 @@
-// backend/server.js
-
 const snmp = require("net-snmp");
 const express = require("express");
 const path = require("path");
 const app = express();
 
 // --- CONFIGURAÇÕES SNMP ---
-const SNMP_HOST = "192.168.1.12";
+const SNMP_HOST = "192.168.1.12"; // IP do Mikrotik
 const SNMP_COMMUNITY = "public";
-const rxOID = "1.3.6.1.2.1.31.1.1.1.6.2";
-const txOID = "1.3.6.1.2.1.31.1.1.1.10.2";
+const rxOID = "1.3.6.1.2.1.31.1.1.1.6.2"; // OID para tráfego recebido
+const txOID = "1.3.6.1.2.1.31.1.1.1.10.2"; // OID para tráfego enviado
 
 let session;
 let lastRx = null;
@@ -118,9 +116,9 @@ app.get("/trafego", (req, res) => {
         const rxDelta = rxNow - lastRx;
         const txDelta = txNow - lastTx;
         
-        // Converte para Mbps (Bits por segundo / 1,000,000)
-        const rxMbps = (Number(rxDelta) * 8) / deltaTime / 1_000_000;
-        const txMbps = (Number(txDelta) * 8) / deltaTime / 1_000_000;
+        // Converte para Bps (Bits por segundo)
+        const rxBps = (Number(rxDelta) * 8) / deltaTime;
+        const txBps = (Number(txDelta) * 8) / deltaTime;
 
         // Atualiza os valores anteriores para o próximo cálculo
         lastRx = rxNow;
@@ -128,8 +126,8 @@ app.get("/trafego", (req, res) => {
         lastTime = now;
         
         res.json({
-            rxKbps: rxMbps.toFixed(2), // O frontend espera rxKbps, mantido para compatibilidade
-            txKbps: txMbps.toFixed(2), // O frontend espera txKbps, mantido para compatibilidade
+            rxBps: rxBps.toFixed(0),
+            txBps: txBps.toFixed(0),
             lastTime: new Date(now).toLocaleTimeString(),
         });
     });
