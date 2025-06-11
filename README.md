@@ -47,8 +47,8 @@ const txOID = "1.3.6.1.2.1.31.1.1.1.10.2"; // OID para tráfego enviado (Tx)
 
 1.  **Clone o repositório (ou baixe os arquivos):**
     ```bash
-    git clone [https://github.com/DevLuizin/ProjetoGraficoWEB-SNMP.git](https://github.com/DevLuizin/ProjetoGraficoWEB-SNMP.git)
-    cd seu-repositorio
+    git clone https://github.com/DevLuizin/ProjetoGraficoWEB-SNMP.git
+    cd ProjetoGraficoWEB-SNMP
     ```
 
 2.  **Instale as dependências do projeto:**
